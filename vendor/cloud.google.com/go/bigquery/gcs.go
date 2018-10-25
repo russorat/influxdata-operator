@@ -53,9 +53,7 @@ func NewGCSReference(uri ...string) *GCSReference {
 type Compression string
 
 const (
-	// None specifies no compression.
 	None Compression = "NONE"
-	// Gzip specifies gzip compression.
 	Gzip Compression = "GZIP"
 )
 

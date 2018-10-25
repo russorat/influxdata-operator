@@ -42,7 +42,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"runtime"
 	"runtime/pprof"
 	"sync"
@@ -79,7 +78,6 @@ var (
 	sleep            = gax.Sleep
 	dialGRPC         = gtransport.Dial
 	onGCE            = gcemd.OnGCE
-	serviceRegexp    = regexp.MustCompile(`^[a-z]([-a-z0-9_.]{0,253}[a-z0-9])?$`)
 )
 
 const (
@@ -468,9 +466,6 @@ func initializeConfig(cfg Config) error {
 	}
 	if config.Service == "" {
 		return errors.New("service name must be configured")
-	}
-	if !serviceRegexp.MatchString(config.Service) {
-		return fmt.Errorf("service name %q does not match regular expression %v", config.Service, serviceRegexp)
 	}
 
 	if config.ServiceVersion == "" {

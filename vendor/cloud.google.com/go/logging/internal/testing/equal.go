@@ -22,7 +22,8 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// PayloadEqual compares two payloads, assuming they are both proto.Messages or both strings.
+// Compare two payloads, assuming they are both proto.Messages
+// or both strings.
 func PayloadEqual(a, b interface{}) bool {
 	if a == nil && b == nil {
 		return true

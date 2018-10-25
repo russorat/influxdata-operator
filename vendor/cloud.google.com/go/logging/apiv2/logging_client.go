@@ -145,10 +145,11 @@ func (c *Client) DeleteLog(ctx context.Context, req *loggingpb.DeleteLogRequest,
 	return err
 }
 
-// WriteLogEntries writes log entries to Logging. This API method is the
-// only way to send log entries to Logging. This method
-// is used, directly or indirectly, by the Logging agent
-// (fluentd) and all logging libraries configured to use Logging.
+// WriteLogEntries writes log entries to Stackdriver Logging. This API method is the
+// only way to send log entries to Stackdriver Logging. This method
+// is used, directly or indirectly, by the Stackdriver Logging agent
+// (fluentd) and all logging libraries configured to use Stackdriver
+// Logging.
 // A single request may contain log entries for a maximum of 1000
 // different resources (projects, organizations, billing accounts or
 // folders)
@@ -168,7 +169,7 @@ func (c *Client) WriteLogEntries(ctx context.Context, req *loggingpb.WriteLogEnt
 }
 
 // ListLogEntries lists log entries.  Use this method to retrieve log entries from
-// Logging.  For ways to export log entries, see
+// Stackdriver Logging.  For ways to export log entries, see
 // Exporting Logs (at /logging/docs/export).
 func (c *Client) ListLogEntries(ctx context.Context, req *loggingpb.ListLogEntriesRequest, opts ...gax.CallOption) *LogEntryIterator {
 	ctx = insertMetadata(ctx, c.xGoogMetadata)
@@ -206,7 +207,8 @@ func (c *Client) ListLogEntries(ctx context.Context, req *loggingpb.ListLogEntri
 	return it
 }
 
-// ListMonitoredResourceDescriptors lists the descriptors for monitored resource types used by Logging.
+// ListMonitoredResourceDescriptors lists the descriptors for monitored resource types used by Stackdriver
+// Logging.
 func (c *Client) ListMonitoredResourceDescriptors(ctx context.Context, req *loggingpb.ListMonitoredResourceDescriptorsRequest, opts ...gax.CallOption) *MonitoredResourceDescriptorIterator {
 	ctx = insertMetadata(ctx, c.xGoogMetadata)
 	opts = append(c.CallOptions.ListMonitoredResourceDescriptors[0:len(c.CallOptions.ListMonitoredResourceDescriptors):len(c.CallOptions.ListMonitoredResourceDescriptors)], opts...)

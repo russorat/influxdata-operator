@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/civil"
+
 	bq "google.golang.org/api/bigquery/v2"
 )
 
@@ -707,10 +708,11 @@ func formatUploadValue(v reflect.Value, fs *FieldSchema, cvt func(reflect.Value)
 func CivilTimeString(t civil.Time) string {
 	if t.Nanosecond == 0 {
 		return t.String()
+	} else {
+		micro := (t.Nanosecond + 500) / 1000 // round to nearest microsecond
+		t.Nanosecond = 0
+		return t.String() + fmt.Sprintf(".%06d", micro)
 	}
-	micro := (t.Nanosecond + 500) / 1000 // round to nearest microsecond
-	t.Nanosecond = 0
-	return t.String() + fmt.Sprintf(".%06d", micro)
 }
 
 // CivilDateTimeString returns a string representing a civil.DateTime in a format compatible
@@ -734,10 +736,10 @@ func parseCivilDateTime(s string) (civil.DateTime, error) {
 }
 
 const (
-	// NumericPrecisionDigits is the maximum number of digits in a NUMERIC value.
+	// The maximum number of digits in a NUMERIC value.
 	NumericPrecisionDigits = 38
 
-	// NumericScaleDigits is the maximum number of digits after the decimal point in a NUMERIC value.
+	// The maximum number of digits after the decimal point in a NUMERIC value.
 	NumericScaleDigits = 9
 )
 

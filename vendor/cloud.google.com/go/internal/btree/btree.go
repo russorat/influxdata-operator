@@ -55,7 +55,6 @@ import (
 // Key represents a key into the tree.
 type Key interface{}
 
-// Value represents a value in the tree.
 type Value interface{}
 
 // item is a key-value pair.
@@ -640,8 +639,6 @@ func (t *BTree) Set(k Key, v Value) (old Value, present bool) {
 	return old, present
 }
 
-// SetWithIndex sets the given key to the given value in the tree, and returns the
-// index at which it was inserted.
 func (t *BTree) SetWithIndex(k Key, v Value) (old Value, present bool, index int) {
 	return t.set(k, v, true)
 }

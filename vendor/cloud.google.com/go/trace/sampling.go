@@ -25,8 +25,6 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// SamplingPolicy provides an interface for sampling.
-//
 // Deprecated: see https://cloud.google.com/trace/docs/setup/go.
 type SamplingPolicy interface {
 	// Sample returns a Decision.

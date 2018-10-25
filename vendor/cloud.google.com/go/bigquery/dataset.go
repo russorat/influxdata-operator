@@ -21,6 +21,7 @@ import (
 
 	"cloud.google.com/go/internal/optional"
 	"cloud.google.com/go/internal/trace"
+
 	"golang.org/x/net/context"
 	bq "google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/iterator"
@@ -403,9 +404,6 @@ type DatasetIterator struct {
 // PageInfo supports pagination. See the google.golang.org/api/iterator package for details.
 func (it *DatasetIterator) PageInfo() *iterator.PageInfo { return it.pageInfo }
 
-// Next returns the next Dataset. Its second return value is iterator.Done if
-// there are no more results. Once Next returns Done, all subsequent calls will
-// return Done.
 func (it *DatasetIterator) Next() (*Dataset, error) {
 	if err := it.nextFunc(); err != nil {
 		return nil, err
@@ -463,11 +461,8 @@ type AccessEntry struct {
 type AccessRole string
 
 const (
-	// OwnerRole is the OWNER AccessRole.
-	OwnerRole AccessRole = "OWNER"
-	// ReaderRole is the READER AccessRole.
+	OwnerRole  AccessRole = "OWNER"
 	ReaderRole AccessRole = "READER"
-	// WriterRole is the WRITER AccessRole.
 	WriterRole AccessRole = "WRITER"
 )
 
@@ -475,20 +470,19 @@ const (
 type EntityType int
 
 const (
-	// DomainEntity is a domain (e.g. "example.com").
+	// A domain (e.g. "example.com")
 	DomainEntity EntityType = iota + 1
 
-	// GroupEmailEntity is an email address of a Google Group.
+	// Email address of a Google Group
 	GroupEmailEntity
 
-	// UserEmailEntity is an email address of an individual user.
+	// Email address of an individual user.
 	UserEmailEntity
 
-	// SpecialGroupEntity is a special group: one of projectOwners, projectReaders, projectWriters or
-	// allAuthenticatedUsers.
+	// A special group: one of projectOwners, projectReaders, projectWriters or allAuthenticatedUsers.
 	SpecialGroupEntity
 
-	// ViewEntity is a BigQuery view.
+	// A BigQuery view.
 	ViewEntity
 )
 

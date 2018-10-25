@@ -24,15 +24,17 @@ import (
 	"os"
 	"sync"
 
+	"golang.org/x/net/context"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+
 	pb "cloud.google.com/go/rpcreplay/proto/rpcreplay"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
-	"golang.org/x/net/context"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 // A Recorder records RPCs for later playback.
@@ -362,44 +364,44 @@ func (rep *Replayer) read(r io.Reader) error {
 
 // DialOptions returns the options that must be passed to grpc.Dial
 // to enable replaying.
-func (rep *Replayer) DialOptions() []grpc.DialOption {
+func (r *Replayer) DialOptions() []grpc.DialOption {
 	return []grpc.DialOption{
 		// On replay, we make no RPCs, which means the connection may be closed
 		// before the normally async Dial completes. Making the Dial synchronous
 		// fixes that.
 		grpc.WithBlock(),
-		grpc.WithUnaryInterceptor(rep.interceptUnary),
-		grpc.WithStreamInterceptor(rep.interceptStream),
+		grpc.WithUnaryInterceptor(r.interceptUnary),
+		grpc.WithStreamInterceptor(r.interceptStream),
 	}
 }
 
 // Initial returns the initial state saved by the Recorder.
-func (rep *Replayer) Initial() []byte { return rep.initial }
+func (r *Replayer) Initial() []byte { return r.initial }
 
 // SetLogFunc sets a function to be used for debug logging. The function
 // should be safe to be called from multiple goroutines.
-func (rep *Replayer) SetLogFunc(f func(format string, v ...interface{})) {
-	rep.log = f
+func (r *Replayer) SetLogFunc(f func(format string, v ...interface{})) {
+	r.log = f
 }
 
 // Close closes the Replayer.
-func (rep *Replayer) Close() error {
+func (r *Replayer) Close() error {
 	return nil
 }
 
-func (rep *Replayer) interceptUnary(_ context.Context, method string, req, res interface{}, _ *grpc.ClientConn, _ grpc.UnaryInvoker, _ ...grpc.CallOption) error {
+func (r *Replayer) interceptUnary(_ context.Context, method string, req, res interface{}, _ *grpc.ClientConn, _ grpc.UnaryInvoker, _ ...grpc.CallOption) error {
 	mreq := req.(proto.Message)
-	if rep.BeforeFunc != nil {
-		if err := rep.BeforeFunc(method, mreq); err != nil {
+	if r.BeforeFunc != nil {
+		if err := r.BeforeFunc(method, mreq); err != nil {
 			return err
 		}
 	}
-	rep.log("request %s (%s)", method, req)
-	call := rep.extractCall(method, mreq)
+	r.log("request %s (%s)", method, req)
+	call := r.extractCall(method, mreq)
 	if call == nil {
 		return fmt.Errorf("replayer: request not found: %s", mreq)
 	}
-	rep.log("returning %v", call.response)
+	r.log("returning %v", call.response)
 	if call.response.err != nil {
 		return call.response.err
 	}
@@ -407,9 +409,9 @@ func (rep *Replayer) interceptUnary(_ context.Context, method string, req, res i
 	return nil
 }
 
-func (rep *Replayer) interceptStream(ctx context.Context, _ *grpc.StreamDesc, _ *grpc.ClientConn, method string, _ grpc.Streamer, _ ...grpc.CallOption) (grpc.ClientStream, error) {
-	rep.log("create-stream %s", method)
-	str := rep.extractStream(method)
+func (r *Replayer) interceptStream(ctx context.Context, _ *grpc.StreamDesc, _ *grpc.ClientConn, method string, _ grpc.Streamer, _ ...grpc.CallOption) (grpc.ClientStream, error) {
+	r.log("create-stream %s", method)
+	str := r.extractStream(method)
 	if str == nil {
 		return nil, fmt.Errorf("replayer: stream not found for method %s", method)
 	}
@@ -467,30 +469,30 @@ func (rcs *repClientStream) CloseSend() error {
 
 // extractCall finds the first call in the list with the same method
 // and request. It returns nil if it can't find such a call.
-func (rep *Replayer) extractCall(method string, req proto.Message) *call {
-	rep.mu.Lock()
-	defer rep.mu.Unlock()
-	for i, call := range rep.calls {
+func (r *Replayer) extractCall(method string, req proto.Message) *call {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, call := range r.calls {
 		if call == nil {
 			continue
 		}
 		if method == call.method && proto.Equal(req, call.request) {
-			rep.calls[i] = nil // nil out this call so we don't reuse it
+			r.calls[i] = nil // nil out this call so we don't reuse it
 			return call
 		}
 	}
 	return nil
 }
 
-func (rep *Replayer) extractStream(method string) *stream {
-	rep.mu.Lock()
-	defer rep.mu.Unlock()
-	for i, stream := range rep.streams {
+func (r *Replayer) extractStream(method string) *stream {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, stream := range r.streams {
 		if stream == nil {
 			continue
 		}
 		if method == stream.method {
-			rep.streams[i] = nil
+			r.streams[i] = nil
 			return stream
 		}
 	}

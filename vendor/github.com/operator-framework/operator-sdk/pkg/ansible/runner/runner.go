@@ -25,7 +25,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/operator-framework/operator-sdk/pkg/ansible/paramconv"
 	"github.com/operator-framework/operator-sdk/pkg/ansible/runner/eventapi"
@@ -41,19 +40,17 @@ import (
 type Runner interface {
 	Run(*unstructured.Unstructured, string) (chan eventapi.JobEvent, error)
 	GetFinalizer() (string, bool)
-	GetReconcilePeriod() (time.Duration, bool)
 }
 
 // watch holds data used to create a mapping of GVK to ansible playbook or role.
 // The mapping is used to compose an ansible operator.
 type watch struct {
-	Version         string     `yaml:"version"`
-	Group           string     `yaml:"group"`
-	Kind            string     `yaml:"kind"`
-	Playbook        string     `yaml:"playbook"`
-	Role            string     `yaml:"role"`
-	ReconcilePeriod string     `yaml:"reconcilePeriod"`
-	Finalizer       *Finalizer `yaml:"finalizer"`
+	Version   string     `yaml:"version"`
+	Group     string     `yaml:"group"`
+	Kind      string     `yaml:"kind"`
+	Playbook  string     `yaml:"playbook"`
+	Role      string     `yaml:"role"`
+	Finalizer *Finalizer `yaml:"finalizer"`
 }
 
 // Finalizer - Expose finalizer to be used by a user.
@@ -85,28 +82,19 @@ func NewFromWatches(path string) (map[schema.GroupVersionKind]Runner, error) {
 			Version: w.Version,
 			Kind:    w.Kind,
 		}
-		var reconcilePeriod time.Duration
-		if w.ReconcilePeriod != "" {
-			d, err := time.ParseDuration(w.ReconcilePeriod)
-			if err != nil {
-				return nil, fmt.Errorf("unable to parse duration: %v - %v, setting to default", w.ReconcilePeriod, err)
-			}
-			reconcilePeriod = d
-		}
-
 		// Check if schema is a duplicate
 		if _, ok := m[s]; ok {
 			return nil, fmt.Errorf("duplicate GVK: %v", s.String())
 		}
 		switch {
 		case w.Playbook != "":
-			r, err := NewForPlaybook(w.Playbook, s, w.Finalizer, reconcilePeriod)
+			r, err := NewForPlaybook(w.Playbook, s, w.Finalizer)
 			if err != nil {
 				return nil, err
 			}
 			m[s] = r
 		case w.Role != "":
-			r, err := NewForRole(w.Role, s, w.Finalizer, reconcilePeriod)
+			r, err := NewForRole(w.Role, s, w.Finalizer)
 			if err != nil {
 				return nil, err
 			}
@@ -119,7 +107,7 @@ func NewFromWatches(path string) (map[schema.GroupVersionKind]Runner, error) {
 }
 
 // NewForPlaybook returns a new Runner based on the path to an ansible playbook.
-func NewForPlaybook(path string, gvk schema.GroupVersionKind, finalizer *Finalizer, reconcilePeriod time.Duration) (Runner, error) {
+func NewForPlaybook(path string, gvk schema.GroupVersionKind, finalizer *Finalizer) (Runner, error) {
 	if !filepath.IsAbs(path) {
 		return nil, fmt.Errorf("playbook path must be absolute for %v", gvk)
 	}
@@ -129,7 +117,6 @@ func NewForPlaybook(path string, gvk schema.GroupVersionKind, finalizer *Finaliz
 		cmdFunc: func(ident, inputDirPath string) *exec.Cmd {
 			return exec.Command("ansible-runner", "-vv", "-p", path, "-i", ident, "run", inputDirPath)
 		},
-		reconcilePeriod: reconcilePeriod,
 	}
 	err := r.addFinalizer(finalizer)
 	if err != nil {
@@ -139,7 +126,7 @@ func NewForPlaybook(path string, gvk schema.GroupVersionKind, finalizer *Finaliz
 }
 
 // NewForRole returns a new Runner based on the path to an ansible role.
-func NewForRole(path string, gvk schema.GroupVersionKind, finalizer *Finalizer, reconcilePeriod time.Duration) (Runner, error) {
+func NewForRole(path string, gvk schema.GroupVersionKind, finalizer *Finalizer) (Runner, error) {
 	if !filepath.IsAbs(path) {
 		return nil, fmt.Errorf("role path must be absolute for %v", gvk)
 	}
@@ -151,7 +138,6 @@ func NewForRole(path string, gvk schema.GroupVersionKind, finalizer *Finalizer, 
 			rolePath, roleName := filepath.Split(path)
 			return exec.Command("ansible-runner", "-vv", "--role", roleName, "--roles-path", rolePath, "--hosts", "localhost", "-i", ident, "run", inputDirPath)
 		},
-		reconcilePeriod: reconcilePeriod,
 	}
 	err := r.addFinalizer(finalizer)
 	if err != nil {
@@ -167,7 +153,6 @@ type runner struct {
 	Finalizer        *Finalizer
 	cmdFunc          func(ident, inputDirPath string) *exec.Cmd // returns a Cmd that runs ansible-runner
 	finalizerCmdFunc func(ident, inputDirPath string) *exec.Cmd
-	reconcilePeriod  time.Duration
 }
 
 func (r *runner) Run(u *unstructured.Unstructured, kubeconfig string) (chan eventapi.JobEvent, error) {
@@ -237,14 +222,6 @@ func (r *runner) Run(u *unstructured.Unstructured, kubeconfig string) (chan even
 		}
 	}()
 	return receiver.Events, nil
-}
-
-// GetReconcilePeriod - new reconcile period.
-func (r *runner) GetReconcilePeriod() (time.Duration, bool) {
-	if r.reconcilePeriod == time.Duration(0) {
-		return r.reconcilePeriod, false
-	}
-	return r.reconcilePeriod, true
 }
 
 func (r *runner) GetFinalizer() (string, bool) {

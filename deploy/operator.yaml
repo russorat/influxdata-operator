@@ -1,36 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-operator
+  name: influxdata-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: app-operator
+      name: influxdata-operator
   template:
     metadata:
       labels:
-        name: app-operator
+        name: influxdata-operator
     spec:
-      serviceAccountName: app-operator
+      serviceAccountName: influxdata-operator
       containers:
-        - name: app-operator
+        - name: influxdata-operator
           # Replace this with the built image name
           image: REPLACE_IMAGE
           ports:
           - containerPort: 60000
             name: metrics
           command:
-          - app-operator
+          - influxdata-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "app-operator"
+              value: "influxdata-operator"

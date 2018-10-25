@@ -18,7 +18,6 @@ import (
 	"flag"
 	"log"
 	"runtime"
-	"time"
 
 	"github.com/operator-framework/operator-sdk/pkg/ansible/operator"
 	proxy "github.com/operator-framework/operator-sdk/pkg/ansible/proxy"
@@ -67,7 +66,7 @@ func main() {
 	}
 
 	// start the operator
-	go operator.Run(done, mgr, "/opt/ansible/watches.yaml", time.Minute)
+	go operator.Run(done, mgr, "/opt/ansible/watches.yaml")
 
 	// wait for either to finish
 	err = <-done

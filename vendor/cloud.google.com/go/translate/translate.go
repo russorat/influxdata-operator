@@ -20,12 +20,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"google.golang.org/api/option"
+	htransport "google.golang.org/api/transport/http"
+
 	"cloud.google.com/go/internal/version"
 	raw "cloud.google.com/go/translate/internal/translate/v2"
 	"golang.org/x/net/context"
 	"golang.org/x/text/language"
-	"google.golang.org/api/option"
-	htransport "google.golang.org/api/transport/http"
 )
 
 const userAgent = "gcloud-golang-translate/20161115"
@@ -129,7 +130,7 @@ type Options struct {
 	Model string
 }
 
-// Format is the format of the input text. Used in Options.Format.
+// The format of the input text. Used in Options.Format.
 type Format string
 
 // Constants for Options.Format.
@@ -138,7 +139,7 @@ const (
 	Text Format = "text"
 )
 
-// Translation contains the results of translating a piece of text.
+// A Translation contains the results of translating a piece of text.
 type Translation struct {
 	// Text is the input text translated into the target language.
 	Text string

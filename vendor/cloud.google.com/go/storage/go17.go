@@ -21,7 +21,7 @@ import (
 	"net/http"
 )
 
-func withContext(ctx context.Context, r *http.Request) *http.Request {
+func withContext(r *http.Request, ctx context.Context) *http.Request {
 	return r.WithContext(ctx)
 }
 

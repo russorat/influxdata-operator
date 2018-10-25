@@ -186,7 +186,6 @@ func (b *BucketHandle) newGetCall() (*raw.BucketsGetCall, error) {
 	return req, nil
 }
 
-// Update updates a bucket's attributes.
 func (b *BucketHandle) Update(ctx context.Context, uattrs BucketAttrsToUpdate) (attrs *BucketAttrs, err error) {
 	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.Bucket.Create")
 	defer func() { trace.EndSpan(ctx, err) }()
@@ -316,7 +315,7 @@ type Lifecycle struct {
 	Rules []LifecycleRule
 }
 
-// RetentionPolicy enforces a minimum retention time for all objects
+// Retention policy enforces a minimum retention time for all objects
 // contained in the bucket.
 //
 // Any attempt to overwrite or delete objects younger than the retention
@@ -443,7 +442,7 @@ type BucketLogging struct {
 	LogObjectPrefix string
 }
 
-// BucketWebsite holds the bucket's website configuration, controlling how the
+// Website holds the bucket's website configuration, controlling how the
 // service behaves when accessing bucket contents as a web site. See
 // https://cloud.google.com/storage/docs/static-website for more information.
 type BucketWebsite struct {
@@ -558,7 +557,6 @@ type BucketEncryption struct {
 	DefaultKMSKeyName string
 }
 
-// BucketAttrsToUpdate define the attributes to update during an Update call.
 type BucketAttrsToUpdate struct {
 	// If set, updates whether the bucket uses versioning.
 	VersioningEnabled optional.Bool

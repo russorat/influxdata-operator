@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
+
+	"github.com/golang/protobuf/ptypes"
 )
 
 // A Precondition modifies a Firestore update or delete operation.
@@ -49,8 +50,9 @@ func (e exists) preconditionProto() (*pb.Precondition, error) {
 func (e exists) String() string {
 	if e {
 		return "Exists"
+	} else {
+		return "DoesNotExist"
 	}
-	return "DoesNotExist"
 }
 
 // LastUpdateTime returns a Precondition that checks that a resource must exist and
