@@ -41,8 +41,13 @@ $ operator-sdk new influxdata-operator --api-version=dev9-labs.bitbucket.org/v1a
 # Add a new controller that watches for Influxdb
 $ operator-sdk add controller  --api-version=dev9-labs.bitbucket.org/v1alpha1 --kind=Influxdb 
 
+# Build and push the influxdata-operator image to a public registry
 
+$ operator-sdk build aaltameemi/influxdata-operator:v0.0.3 
 
+$ docker push aaltameemi/influxdata-operator:v0.0.3
+
+# Update the operator manifest to use the built image name.
 
 # Deploy the Influxdata Operator && Custom Resource for Influxdata Installation
 $ kubectl create -f deploy/storageclass-gcp.yaml
