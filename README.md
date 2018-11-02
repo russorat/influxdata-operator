@@ -47,7 +47,7 @@ $ operator-sdk build aaltameemi/influxdata-operator:v0.0.3
 
 $ docker push aaltameemi/influxdata-operator:v0.0.3
 
-# Update the operator manifest to use the built image name.
+Note:  Update the operator manifest to use the built image name.
 
 # Deploy the Influxdata Operator && Custom Resource for Influxdata Installation
 $ kubectl create -f deploy/storageclass-gcp.yaml
