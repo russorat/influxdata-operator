@@ -3,16 +3,22 @@ package backup
 import (
 	"context"
 	"log"
-
+	"fmt"
+	"os"
+	"os/exec"
+        "io/ioutil"
+	"strings"
+	"bytes"
+	"net/http"
 	appv1alpha1 "github.com/dev9/prod/influxdata-operator/pkg/apis/app/v1alpha1"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -95,55 +101,107 @@ func (r *ReconcileBackup) Reconcile(request reconcile.Request) (reconcile.Result
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-
-	// Define a new Pod object
-	pod := newPodForCR(instance)
-
-	// Set Backup instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		log.Printf("Creating a new Pod %s/%s\n", pod.Namespace, pod.Name)
-		err = r.client.Create(context.TODO(), pod)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		// Pod created successfully - don't requeue
-		return reconcile.Result{}, nil
-	} else if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Pod already exists - don't requeue
-	log.Printf("Skip reconcile: Pod %s/%s already exists", found.Namespace, found.Name)
+	backup(instance)
 	return reconcile.Result{}, nil
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *appv1alpha1.Backup) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
-	}
+// - new additions - 
+
+func backup(cr *appv1alpha1.Backup) {
+    // For testing locally
+    // backupCmd := fmt.Sprintf("influxd backup -portable -database %s %s", DBName, OutputDir)
+    
+    // These are defined here, but should come from config
+    DBName := "foo"
+    OutputDir := "bar"
+    DBHost := "baz"
+    S3_REGION := "not-a-real-region"
+
+    backupCmd := fmt.Sprintf("influxd backup -portable -database %s -host %s %s", DBName, DBHost, OutputDir)
+    cmd := exec.Command("bash", "-c", backupCmd)
+
+    // Create an *exec.Cmd
+    // Combine stdout and stderr
+    printCommand(cmd)
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        printError(err)
+        printOutput(output)
+        log.Fatal("Backup failed!")
+        return
+    }
+    printOutput(output)
+
+    files, err := ioutil.ReadDir(OutputDir)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Create a single AWS session (we can re use this if we're uploading many files)
+    s, err := session.NewSession(&aws.Config{Region: aws.String(S3_REGION)})
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for _, f := range files {
+        file := OutputDir + "/" + f.Name()
+        err := AddFileToS3(s, file)
+        if err != nil {
+            // TODO: Probably want to handle this in a more elegant way
+            log.Fatal(err)
+        }
+    }
 }
+
+// AddFileToS3 will upload a single file to S3, it will require a pre-built aws session
+// and will set file info like content type and encryption on the uploaded file.
+func AddFileToS3(s *session.Session, fileDir string) error {
+
+
+    // TODO: remove this and parameterize it 
+    S3_BUCKET := "foo"
+
+    // Open the file for use
+    file, err := os.Open(fileDir)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+
+    // Get file size and read the file content into a buffer
+    fileInfo, _ := file.Stat()
+    var size int64 = fileInfo.Size()
+    buffer := make([]byte, size)
+    file.Read(buffer)
+
+    // Config settings: this is where you choose the bucket, filename, content-type etc.
+    // of the file you're uploading.
+    _, err = s3.New(s).PutObject(&s3.PutObjectInput{
+        Bucket:               aws.String(S3_BUCKET),
+        Key:                  aws.String(fileDir),
+        ACL:                  aws.String("private"),
+        Body:                 bytes.NewReader(buffer),
+        ContentLength:        aws.Int64(size),
+        ContentType:          aws.String(http.DetectContentType(buffer)),
+        ContentDisposition:   aws.String("attachment"),
+        ServerSideEncryption: aws.String("AES256"),
+    })
+    return err
+}
+
+func printCommand(cmd *exec.Cmd) {
+    fmt.Printf("==> Executing: %s\n", strings.Join(cmd.Args, " "))
+}
+
+func printError(err error) {
+    if err != nil {
+        os.Stderr.WriteString(fmt.Sprintf("==> Error: %s\n", err.Error()))
+    }
+}
+
+func printOutput(outs []byte) {
+    if len(outs) > 0 {
+        fmt.Printf("==> Output: %s\n", string(outs))
+    }
+}
+
