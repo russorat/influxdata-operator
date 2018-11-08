@@ -31,9 +31,3 @@ rules:
   - '*'
   verbs:
   - '*'
-- apiGroups:
-  - app.example.com
-  resources:
-  - '*'
-  verbs:
-  - '*'

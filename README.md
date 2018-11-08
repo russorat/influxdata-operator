@@ -1,68 +1,90 @@
-# Influxdata-Operator
+# Influxdb Operator
 
-The Influxdata Operator creates, configures and manages Influxdb OSS running on Kubernetes.
+A Kubernetes operator to manage Influxdb instances.
 
-InfluxDB
-An Open-Source Time Series Database
-InfluxDB is an open source time series database built by the folks over at InfluxData with no external dependencies. It's useful for recording metrics, events, and performing analytics.
+## Overview
 
-QuickStart
+This Operator is built using the [Operator SDK](https://github.com/operator-framework/operator-sdk), which is part of the [Operator Framework](https://github.com/operator-framework/) and manages one or more Influxdb instances deployed on Kubernetes.
 
-kubectl create -f deploy/crds/influxdata_v1alpha1_influxdb_cr.yaml
+## Usage
 
-Prerequisites:
+The first step is to deploy the Influxdb Operator into the cluster where it
+will watch for requests to create `Influxdb` resources, much like the native
+Kubernetes Deployment Controller watches for Deployment resource requests.
 
-dep,
-git,
-go,
-docker,
-kubectl,
-And Access to a kubernetes cluster.
+#### Deploy Influxdb Operator
 
+The `deploy` directory contains the manifests needed to properly install the
+Operator.
 
+```
+kubectl apply -f deploy
+```
 
-Installing the Operator-SDK
+You can watch the list of pods and wait until the Operator pod is in a Running
+state, it should not take long.
 
-$ mkdir -p $GOPATH/src/github.com/operator-framework
+```
+kubectl get pods -wl name=influxdata-operator
+```
 
-$ cd $GOPATH/src/github.com/operator-framework
+You can have a look at the logs for troubleshooting if needed.
 
-$ git clone https://github.com/operator-framework/operator-sdk
+```
+kubectl logs -l name=influxdata-operator
+```
 
-$ cd operator-sdk
+Once the Influxdb Operator is deployed, Have a look in the `examples` directory for example manifests that create `Influxdb` resources.
 
-$ make dep
+#### Create Influxdb Cluster
 
-$ make install
+Once the Operator is deployed and running, we can create an example Influxdb
+cluster. The `example` directory contains several example manifests for creating
+Influxdb clusters using the Operator.
 
-# Create and deploy an influxdata-operator using the SDK CLI:
-$ operator-sdk new influxdata-operator --api-version=dev9-labs.bitbucket.org/v1alpha1 --kind=Influxdb
+```
+kubectl apply -f example/influxdb-minimal.yaml
+```
 
-# Add a new controller that watches for Influxdb
-$ operator-sdk add controller  --api-version=dev9-labs.bitbucket.org/v1alpha1 --kind=Influxdb 
+Watch the list of pods to see that each requested node starts successfully.
 
-# Build and push the influxdata-operator image to a public registry
+```
+kubectl get pods -wl cluster=influxdb-minimal-example
+```
 
-$ operator-sdk build aaltameemi/influxdata-operator:v0.0.3 
+#### Destroy Influxdb Cluster
 
-$ docker push aaltameemi/influxdata-operator:v0.0.3
+Simply delete the `Influxdb` Custom Resource to remove the cluster.
 
-Note:  Update the operator manifest to use the built image name.
+```
+kubectl delete -f example/influxdb-minimal.yaml
+```
 
-# Deploy the Influxdata Operator && Custom Resource for Influxdata Installation
-$ kubectl create -f deploy/storageclass-gcp.yaml
+#### Persistent Volumes
 
-$ kubectl create -f deploy/crds/influxdata_v1alpha1_influxdb_cr.yaml
+The Influxdb Operator supports the use of Persistent Volumes for each node in
+the Influxdb cluster. See [influxdb-custom.yaml](example/influxdb-custom.yaml)
+for the syntax to enable.
 
-Note: storageclass-gcp.yaml this yaml file will create PD in GCP , storageclass-aws.yaml this yaml file will create EBS in AWS
-and storageclass-nfs.yaml will create PVC based on nfs .
+```
+kubectl apply -f example/influxdb-custom.yaml
+```
 
-# Cleanup
-$ kubectl create -f deploy/crds/influxdata_v1alpha1_influxdb_cr.yaml
+When deleting a Influxdb cluster that uses Persistent Volumes, remember to
+remove the left-over volumes when the cluster is no longer needed, as these will
+not be removed automatically.
 
-$ kubectl create -f deploy/storageclass-gcp.yaml
+```
+kubectl delete influxdb,pvc -l cluster=influxdb-custom-example
+```
 
+## Development
 
-# Persistence
-The InfluxDB image stores data in the /var/lib/influxdb directory in the container.
-The Operator mounts a Persistent Volume volume at this location. The volume is created using dynamic volume provisioning.
+Clone the repository to a location on your workstation, generally this should be in someplace like `$GOPATH/src/github.com/ORG/REPO`.
+
+Navigate to the location where the repository has been cloned and install the dependencies.
+
+```
+cd YOUR_REPO_PATH
+dep ensure
+```

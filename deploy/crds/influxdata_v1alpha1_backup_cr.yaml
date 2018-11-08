@@ -1,0 +1,8 @@
+apiVersion: influxdata.com/v1alpha1
+kind: Backup
+metadata:
+  name: influxdb-backup
+spec:
+  # Add fields here
+  database: testdb
+  hostname: localhost
