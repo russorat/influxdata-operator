@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	influxdatav1alpha1 "github.com/dev9/prod/influxdata-operator/pkg/apis/influxdata/v1alpha1"
+	influxdatav1alpha1 "bitbucket.org/AhmedDev9/influxdataoperator/pkg/apis/influxdata/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"

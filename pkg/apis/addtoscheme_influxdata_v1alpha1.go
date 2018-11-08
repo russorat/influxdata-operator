@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/dev9/prod/influxdata-operator/pkg/apis/influxdata/v1alpha1"
+	"bitbucket.org/AhmedDev9/influxdataoperator/pkg/apis/influxdata/v1alpha1"
 )
 
 func init() {

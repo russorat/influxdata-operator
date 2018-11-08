@@ -5,8 +5,8 @@ clean:
 
 .PHONY: build
 build:
-	operator-sdk build aaltameemi/influxdb-backup-operator:v$(version)
-	docker push aaltameemi/influxdb-backup-operator:v$(version)
+	operator-sdk build russorat/influxdb-backup-operator:v$(version)
+	docker push russorat/influxdb-backup-operator:v$(version)
 	@sed -E -i 's/(.*?)influxdb-backup-operator:v.*?/\1influxdb-backup-operator:v$(version)/g' deploy/crds/influxdata_v1alpha1_influxdb_cr.yaml
 	@echo "Version should be $(version)"
 	@cat deploy/crds/influxdata_v1alpha1_influxdb_cr.yaml | grep aal

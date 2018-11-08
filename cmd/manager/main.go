@@ -5,8 +5,8 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/dev9/prod/influxdata-operator/pkg/apis"
-	"github.com/dev9/prod/influxdata-operator/pkg/controller"
+	"bitbucket.org/AhmedDev9/influxdataoperator/pkg/apis"
+	"bitbucket.org/AhmedDev9/influxdataoperator/pkg/controller"
 	k8sutil "github.com/operator-framework/operator-sdk/pkg/util/k8sutil"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"

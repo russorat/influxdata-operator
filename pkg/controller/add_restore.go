@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/dev9/prod/influxdata-operator/pkg/controller/restore"
+	"bitbucket.org/AhmedDev9/influxdataoperator/pkg/controller/restore"
 )
 
 func init() {
